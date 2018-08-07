@@ -80,7 +80,7 @@ function showTopics(bot, message, respString='') {
     for (var i = 0; i < topics.length; i++) {
       responseString += `${i+1}.) ${topics[i].name}\n`
     }
-    if (responseString.length) {
+    if (responseString.length > respString.length) {
       bot.reply(message, `${responseString}`)
     } else {
       bot.reply(message, 'Looks like there are no topics at the moment!')
@@ -100,6 +100,29 @@ function getVotingTotals(bot, message) {
   })
 }
 
+function clearLessonTopics(bot, message, response) {
+  controller.storage.topics.all().then(function (topics, error) {
+    if (error) {
+      console.log(error)
+    } else {
+      for (var i = 0; i < topics.length; i++) {
+        controller.storage.topics.delete(topics[i], function(err, topic) {
+          console.log(`Deleted: ${topic}`)
+        })
+      }
+      bot.api.reactions.add({
+        timestamp: response.ts,
+        channel: response.channel,
+        name: 'put_litter_in_its_place'
+      }, function (err) {
+          if (err) {
+            console.log(err)
+          }
+          bot.reply(response, `Topics list cleared!`)
+      })
+    }
+  })
+}
 /**
  * Core bot logic goes here!
  */
@@ -120,6 +143,7 @@ controller.hears(['add topic', 'Add topic', 'Add Topic'], ['direct_mention', 'me
     bot.startConversation(message, function (err, convo) {
       if (err) {
         console.log(err)
+        convo.stop()
       } else {
         convo.addQuestion(`Would you like to add ${topic} to the list of learning options?(Y/N)`, (response, convo) => {
           if (['Y', 'YES'].includes(response.text.toUpperCase())) {
@@ -139,6 +163,8 @@ controller.hears(['add topic', 'Add topic', 'Add Topic'], ['direct_mention', 'me
             }).catch(function(error) {
                 console.log(error);
             });
+          } else {
+            convo.stop()
           }
         })
       }
@@ -163,6 +189,23 @@ controller.hears(['Start Voting', 'start voting', 'Start voting'], ['direct_ment
 controller.hears(['hello ', 'hi ', 'greetings '], ['direct_mention', 'mention', 'direct_message'], function(bot,message) {
   bot.reply(message, 'Hello!');
 });
+
+controller.hears(['clear topics', 'Clear Topics', 'Clear topics'], ['direct_mention', 'mention', 'direct_message'], function (bot, message) {
+  bot.startConversation(message, function(err, convo) {
+    if (err) {
+      console.log(err)
+    } else {
+      convo.addQuestion('Are you sure you want to clear the current list of topics?(Y/N)', (response, convo) => {
+        if (['Y', 'YES'].includes(response.text.toUpperCase())) {
+            clearLessonTopics(bot, message, response)
+            convo.stop()
+        } else {
+          convo.stop()
+        }
+      })
+    }
+  })
+})
 
 /**
  * AN example of what could be:
