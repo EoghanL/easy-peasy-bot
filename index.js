@@ -74,14 +74,28 @@ controller.on('rtm_close', function (bot) {
     // you may want to attempt to re-open
 });
 
-function showTopics(bot, message, respString='') {
-  let responseString = respString
+function showTopics(bot, message, initString='', saveMsgCallback=false) {
+  let responseString = initString
+
   controller.storage.topics.all().then(function (topics) {
     for (var i = 0; i < topics.length; i++) {
-      responseString += `${i+1}.) ${topics[i].name}\n`
+      responseString += `${i}.) ${topics[i].name}\n`
     }
-    if (responseString.length > respString.length) {
-      bot.reply(message, `${responseString}`)
+    if (responseString.length > initString.length) {
+      bot.reply(message, `${responseString}`, function (err, resp) {
+        if (err) {
+          console.log(err)
+        } else {
+          if (saveMsgCallback) {
+            let topicID = message.client_msg_id.replace(/-/g, "").slice(0, 24)
+            controller.storage.votes.save({id: topicID, message: resp}).then(function(correct) {
+              return
+            }).catch(function(err) {
+                console.log(err)
+            })
+          }
+        }
+      })
     } else {
       bot.reply(message, 'Looks like there are no topics at the moment!')
     }
@@ -90,14 +104,32 @@ function showTopics(bot, message, respString='') {
   })
 }
 
-function getVotingTotals(bot, message) {
-  bot.api.reactions.get({token: token, channel: message.channel, timestamp: message.ts}, function (err, resp) {
+async function getVotingTotals(bot, message, callback) {
+  controller.storage.votes.all(function(err, votes) {
     if (err) {
-      console.log(err)
+      console.log(`Error: ${err}`)
     } else {
-      console.log(resp)
+      tallyMsg = votes[votes.length - 1].message
+
+      bot.api.reactions.get({token: token, channel: tallyMsg.channel, timestamp: tallyMsg.ts}, function (err, resp) {
+        if (err) {
+          console.log('hit')
+        } else {
+          const { reactions } = resp.message
+          const voteTotals = {}
+
+          reactions.forEach(reaction => voteTotals[reaction['name']] = reaction['count'])
+          callback(voteTotals)
+        }
+      })
     }
   })
+}
+
+function formatVoteResults(votesObj) {
+  return Object.keys(votesObj).reduce((output, voteIdx) => {
+    return output += `${voteIdx}: ${votesObj[voteIdx]}\n`
+  }, 'The voting results are: \n')
 }
 
 function clearLessonTopics(bot, message, response) {
@@ -177,23 +209,29 @@ controller.hears(['add topic', 'Add topic', 'Add Topic'], ['direct_mention', 'me
 controller.hears(['Get Topics', 'get topics', 'Get topics'], ['direct_mention', 'mention', 'direct_message'], (bot, message) => showTopics(bot, message, 'The current topics are:\n '))
 
 controller.hears(['Start Voting', 'start voting', 'Start voting'], ['direct_mention', 'mention', 'direct_message'], (bot, message) => {
-  let topicID = response.client_msg_id.replace(/-/g, "").slice(0, 24)
-  controller.storage.votes.save({id: topicID, message: message}).then(function(correct) {
-    return
-  }).catch(function(err) {
-      console.log(err)
-  })
-  showTopics(bot, message, 'React with the number emoji that corresponds to the topic you want to learn about!\n')
+  showTopics(bot, message, 'React with the number emoji that corresponds to the topic you want to learn about!\n', true)
 })
 
-controller.hears(['hello ', 'hi ', 'greetings '], ['direct_mention', 'mention', 'direct_message'], function(bot,message) {
+controller.hears(['Close voting', 'Close Voting', 'close voting'], ['direct_mention', 'mention', 'direct_message'], function(bot, message) {
+  const totals = getVotingTotals(bot, message, function(totalVotes) {
+    const voteResults = formatVoteResults(totalVotes)
+    console.log(message, totalVotes, voteResults)
+    bot.reply(message, voteResults)
+  })
+})
+
+controller.hears('Hello, there.', 'direct_message', function (bot, message) {
+  bot.reply(message, 'https://lh3.googleusercontent.com/-xv1hKxae6hE/WJvjnHjKuEI/AAAAAAAABvE/kZTbR_iH9iEewYpFeWfd2UpeEGB6tS-RACJoC/w500-h150/general.gif')
+})
+
+controller.hears(['hello', 'hi', 'greetings '], ['direct_mention', 'mention', 'direct_message'], function(bot,message) {
   bot.reply(message, 'Hello!');
 });
 
 controller.hears(['clear topics', 'Clear Topics', 'Clear topics'], ['direct_mention', 'mention', 'direct_message'], function (bot, message) {
   bot.startConversation(message, function(err, convo) {
     if (err) {
-      console.log(err)
+      console.log(`Error: ${err}`)
     } else {
       convo.addQuestion('Are you sure you want to clear the current list of topics?(Y/N)', (response, convo) => {
         if (['Y', 'YES'].includes(response.text.toUpperCase())) {
