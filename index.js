@@ -1,7 +1,9 @@
 var constants = require('./constants.js')
 var utils = require('./utils.js')
+var sequelize = require('./sequelize')
 
 const {
+  ENV,
   MSGS,
   NUMBERS,
   MSG_TYPES,
@@ -14,11 +16,11 @@ const {
   formatVoteResults,
   clearLessonTopics
 } = utils
+
+const { sqlize } = sequelize
 /**
  * A Bot for Slack!
  */
-
-const ENV = require('dotenv').config({path: __dirname + '/.env'}).parsed
 
 /**
  * Define a function for initiating a conversation on installation
@@ -42,16 +44,16 @@ function onInstallation(bot, installer) {
  * Configure the persistence options
  */
 var config = {};
-if (ENV.MONGOLAB_URI) {
-    var BotkitStorage = require('botkit-storage-mongo');
-    config = {
-        storage: BotkitStorage({mongoUri: ENV.MONGOLAB_URI, tables: ['topics', 'votes']}),
-    };
-} else {
-    config = {
-        json_file_store: ((ENV.TOKEN)?'./db_slack_bot_ci/':'./db_slack_bot_a/'), //use a different name if an app or CI
-    };
-}
+// if (ENV.MONGOLAB_URI) {
+//     var BotkitStorage = require('botkit-storage-mongo');
+//     config = {
+//         storage: BotkitStorage({mongoUri: ENV.MONGOLAB_URI, tables: ['topics', 'votes']}),
+//     };
+// } else {
+//     config = {
+//         json_file_store: ((ENV.TOKEN)?'./db_slack_bot_ci/':'./db_slack_bot_a/'), //use a different name if an app or CI
+//     };
+// }
 
 /**
  * Are being run as an app or a custom integration? The initialization will differ, depending
@@ -184,6 +186,14 @@ controller.hears(QUERIES.CLEAR_TOPICS, MSG_TYPES.ALL, function (bot, message) {
       })
     }
   })
+})
+
+controller.hears('test DB', 'direct_message', (bot, message) => {
+  sqlize.authenticate().then(() => {
+    console.log('Connection has been established successfully.');
+  }).catch(err => {
+    console.error('Unable to connect to the database:', err);
+  });
 })
 
 /**

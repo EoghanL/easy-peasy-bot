@@ -31,6 +31,8 @@
     "dotenv": "^6.0.0",
     "googleapis": "^27.0.0",
     "mongodb": "^1.4.39",
+    "pg": "^7.4.3",
+    "sequelize": "^4.38.0",
     "watson-developer-cloud": "^3.8.0"
   }
 }

@@ -1,3 +1,5 @@
+const ENV = require('dotenv').config({path: __dirname + '/.env'}).parsed
+
 const NUMBERS = {
   'zero': 0,
   'one': 1,
@@ -34,6 +36,7 @@ const MSGS = {
 }
 
 module.exports = {
+  ENV,
   MSGS,
   NUMBERS,
   QUERIES,
