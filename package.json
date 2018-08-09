@@ -29,6 +29,7 @@
     "botkit-storage-mongo": "^1.0.7",
     "debug": "^3.1.0",
     "dotenv": "^6.0.0",
+    "googleapis": "^27.0.0",
     "mongodb": "^1.4.39",
     "watson-developer-cloud": "^3.8.0"
   }
