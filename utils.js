@@ -28,7 +28,7 @@ function showTopics(bot, message, initString='', controller, saveMsgCallback=fal
   })
 }
 
-async function getVotingTotals(controller, bot, message, callback) {
+async function getVotingTotals(controller, bot, message, callback, token) {
   controller.storage.votes.all(function(err, votes) {
     if (err) {
       console.log(`Error: ${err}`)

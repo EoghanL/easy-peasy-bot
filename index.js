@@ -158,7 +158,7 @@ controller.hears(QUERIES.CLOSE_VOTE, MSG_TYPES.ALL, function(bot, message) {
     const voteResults = formatVoteResults(totalVotes)
     console.log(message, totalVotes, voteResults)
     bot.reply(message, voteResults)
-  })
+  }, token)
 })
 
 controller.hears('Hello there.', MSG_TYPES.DIR_MSG, function (bot, message) {
