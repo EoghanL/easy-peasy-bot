@@ -1,6 +1,7 @@
 var constants = require('./constants.js')
 var utils = require('./utils.js')
 var sequelize = require('./sequelize')
+var models = require('./database/models.js')
 
 const {
   ENV,
@@ -16,6 +17,12 @@ const {
   formatVoteResults,
   clearLessonTopics
 } = utils
+
+const {
+  User,
+  Todo,
+  Topic
+} = models
 
 const { sqlize } = sequelize
 /**
@@ -64,7 +71,6 @@ if (ENV.TOKEN || ENV.SLACK_TOKEN) {
     var customIntegration = require('./lib/custom_integrations');
     var token = (ENV.TOKEN) ? ENV.TOKEN : ENV.SLACK_TOKEN;
     var controller = customIntegration.configure(token, config, onInstallation);
-
 } else if (process.env.CLIENT_ID && process.env.CLIENT_SECRET && process.env.PORT) {
     //Treat this as an app
     var app = require('./lib/apps');
@@ -121,7 +127,8 @@ controller.hears(QUERIES.ADD_TOPIC, MSG_TYPES.ALL, function(bot, message) {
         convo.addQuestion(`Would you like to add ${topic} to the list of learning options?(Y/N)`, (response, convo) => {
           if (['Y', 'YES'].includes(response.text.toUpperCase())) {
             let topicID = response.client_msg_id.replace(/-/g, "").slice(0, 24)
-            controller.storage.topics.save({id: topicID, name: topic}).then(function(correct) {
+            Topic.create({description: topic, date: Date.now()}).then((correct) => {
+              console.log(correct)
               bot.api.reactions.add({
                 timestamp: response.ts,
                 channel: response.channel,
@@ -156,10 +163,9 @@ controller.hears(QUERIES.START_VOTE, MSG_TYPES.ALL, (bot, message) => {
 })
 
 controller.hears(QUERIES.CLOSE_VOTE, MSG_TYPES.ALL, function(bot, message) {
-  const totals = getVotingTotals(controller, bot, message, function(totalVotes) {
-    const voteResults = formatVoteResults(totalVotes)
-    console.log(message, totalVotes, voteResults)
-    bot.reply(message, voteResults)
+  const totals = getVotingTotals(controller, bot, message, async function(totalVotes) {
+    const voteResults = await formatVoteResults(totalVotes)
+    bot.reply(message, `${voteResults}`)
   }, token)
 })
 

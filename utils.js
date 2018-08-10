@@ -1,9 +1,27 @@
+var constants = require('./constants.js')
+var models = require('./database/models.js')
+
+const {
+  Message,
+  Todo,
+  Topic,
+  User,
+} = models
+
+const {
+  ENV,
+  MSGS,
+  NUMBERS,
+  MSG_TYPES,
+  QUERIES,
+} = constants
+
 function showTopics(bot, message, initString='', controller, saveMsgCallback=false) {
   let responseString = initString
 
-  controller.storage.topics.all().then(function (topics) {
+  Topic.all().then(function (topics) {
     for (var i = 0; i < topics.length; i++) {
-      responseString += `${i}.) ${topics[i].name}\n`
+      responseString += `${i}.) ${topics[i].description}\n`
     }
     if (responseString.length > initString.length) {
       bot.reply(message, `${responseString}`, function (err, resp) {
@@ -11,8 +29,10 @@ function showTopics(bot, message, initString='', controller, saveMsgCallback=fal
           console.log(err)
         } else {
           if (saveMsgCallback) {
-            let topicID = message.client_msg_id.replace(/-/g, "").slice(0, 24)
-            controller.storage.votes.save({id: topicID, message: resp}).then(function(correct) {
+            Message.create({
+              channel: resp.channel,
+              timestamp: resp.ts
+            }).then(function(correct) {
               return
             }).catch(function(err) {
                 console.log(err)
@@ -29,15 +49,16 @@ function showTopics(bot, message, initString='', controller, saveMsgCallback=fal
 }
 
 async function getVotingTotals(controller, bot, message, callback, token) {
-  controller.storage.votes.all(function(err, votes) {
+  Message.all().then(function(messages, err) {
     if (err) {
       console.log(`Error: ${err}`)
     } else {
-      tallyMsg = votes[votes.length - 1].message
+      tallyMsg = messages[messages.length - 1]
+      const { channel, timestamp } = tallyMsg.dataValues
 
-      bot.api.reactions.get({token: token, channel: tallyMsg.channel, timestamp: tallyMsg.ts}, function (err, resp) {
+      bot.api.reactions.get({token: token, channel: channel, timestamp: timestamp}, function (err, resp) {
         if (err) {
-          console.log('hit')
+          console.log(err)
         } else {
           const { reactions } = resp.message
           const voteTotals = {}
@@ -50,14 +71,16 @@ async function getVotingTotals(controller, bot, message, callback, token) {
   })
 }
 
-function formatVoteResults(votesObj) {
+async function formatVoteResults(votesObj) {
+  topics = await Topic.all()
+  console.log(topics)
   return Object.keys(votesObj).reduce((output, voteIdx) => {
-    return output += `${voteIdx}: ${votesObj[voteIdx]}\n`
+    return output += `${topics[NUMBERS[voteIdx]].description}: ${votesObj[voteIdx]}\n`
   }, 'The voting results are: \n')
 }
 
 function clearLessonTopics(bot, message, response, controller) {
-  controller.storage.topics.all().then(function (topics, error) {
+  Topic.all().then(function (topics, error) {
     if (error) {
       console.log(error)
     } else {
