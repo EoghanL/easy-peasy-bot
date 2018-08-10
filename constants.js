@@ -19,6 +19,8 @@ const QUERIES = {
   GET_TOPICS: ['Get Topics', 'get topics', 'Get topics'],
   GREETING: ['hello', 'hi', 'greetings'],
   HELP: ['HELP', 'help', 'Help'],
+  IN_MSG: ['in:', 'In:', 'IN:', 'in: ', 'In: ', 'IN: '],
+  OUT_MSG: ['out:', 'out', 'Out', 'Out:', 'OUT', 'OUT:'],
   START_VOTE: ['Start Voting', 'start voting', 'Start voting'],
   MEETING: ['Meet', 'meet', 'Meeting', 'meeting']
 }
@@ -34,7 +36,7 @@ const MSG_TYPES = {
 
 const MSGS = {
   INSTRUCT_VOTE: 'React with the number emoji that corresponds to the topic you want to learn about!\n',
-  HELP_MSG: "You can either mention me in an exisiting channel or chat with me directly by adding me under the Apps section of your Slack app. \n Here are a list of my preset commands: \n `Add Topic - Add a topic to the weekly list of topics that will be voted on` \n `Get Topics - Show the current list of learning topics` \n `Clear Topics - Clear the current list of topics` \n `Start Vote - Open up the voting process to select a topic for our next learning session` \n `Close Voting - Close voting and tally up the results` \n"
+  HELP_MSG: "You can either mention me in an exisiting channel or chat with me directly by adding me under the Apps section of your Slack app. \n Here are a list of my preset commands: \n `Add Topic - Add a topic to the weekly list of topics that will be voted on` \n `Get Topics - Show the current list of learning topics` \n `Clear Topics - Clear the current list of topics` \n `Start Vote - Open up the voting process to select a topic for our next learning session` \n `Close Voting - Close voting, tally up the results, and delete all current topics` \n I'm also capable of creating a todo list for you out of your IN messages in the 'standup' channel"
 }
 
 module.exports = {

@@ -5,6 +5,12 @@ const { sqlize } = sequelize
 const User = sqlize.define('user', {
   name: {
     type: Sequelize.STRING
+  },
+  slack_user_id: {
+    type: Sequelize.STRING
+  },
+  email: {
+    type: Sequelize.STRING
   }
 })
 

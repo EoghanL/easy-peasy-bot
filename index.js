@@ -77,6 +77,7 @@ if (ENV.TOKEN || ENV.SLACK_TOKEN) {
     var customIntegration = require('./lib/custom_integrations');
     var token = (ENV.TOKEN) ? ENV.TOKEN : ENV.SLACK_TOKEN;
     var controller = customIntegration.configure(token, config, onInstallation);
+
 } else if (process.env.CLIENT_ID && process.env.CLIENT_SECRET && process.env.PORT) {
     //Treat this as an app
     var app = require('./lib/apps');
@@ -105,9 +106,8 @@ controller.on('rtm_close', function (bot) {
 });
 
 /**
- * Core bot logic goes here!
+ * Core bot logic here!
  */
-// BEGIN EDITING HERE!
 
 controller.on('bot_channel_join', function (bot, message) {
     bot.reply(message, "I'm here!")
@@ -172,7 +172,46 @@ controller.hears(QUERIES.CLOSE_VOTE, MSG_TYPES.ALL, function(bot, message) {
   const totals = getVotingTotals(controller, bot, message, async function(totalVotes) {
     const voteResults = await formatVoteResults(totalVotes)
     bot.reply(message, `${voteResults}`)
+    Topic.destroy({where: {}}).then(() => {})
   }, token)
+})
+
+controller.hears(QUERIES.IN_MSG, ['ambient', 'direct_message', 'direct_mention'], function (bot, message) {
+  const todos = message.text.split(':')[1].trim().split(',')
+
+  User.findOrCreate({where: {slack_user_id: message.user}}).then((model, created) => {
+    if (model[0].isNewRecord) {
+      bot.api.users.info({token: token, user: message.user}, (err, resp) => {
+        if (err) {
+          console.log(err)
+        } else {
+          const { email, real_name } = resp.user.profile
+
+          model.user.update({name: real_name, email: email})
+        }
+      })
+    }
+    console.log('hit', model)
+    todos.forEach(todo => Todo.create({description: todo.trim(), foreign_id: model[0].dataValues.id}))
+  })
+
+  let todoString = "Your todos are: \n\n"
+
+  //todos.forEach((todo, idx))
+  todos.forEach((todo, idx) => todoString += `${idx+1}: ${todo.trim()} \n`)
+  bot.whisper(message, `${todoString} \n`)
+})
+
+controller.hears(QUERIES.OUT_MSG, ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
+  const outMsg = message.text.split(':')[1].trim()
+  console.log(outMsg)
+  if (outMsg.toLowerCase().includes('all done')) {
+    User.findOne({slack_user_id: message.user}).then((user) => {
+      console.log(user)
+      Todo.destroy({where: {foreign_id: user.id}}).then(() => {})
+    })
+    bot.reply(message, 'Congrats on finishing all of your daily tasks.')
+  }
 })
 
 controller.hears('Hello there.', MSG_TYPES.DIR_MSG, function (bot, message) {
@@ -253,6 +292,7 @@ controller.hears('test DB', 'direct_message', (bot, message) => {
  * AN example of what could be:
  * Any un-handled direct mention gets a reaction and a pat response!
  */
+
 controller.on(MSG_TYPES.ALL, function (bot, message) {
    bot.api.reactions.add({
        timestamp: message.ts,
@@ -260,7 +300,7 @@ controller.on(MSG_TYPES.ALL, function (bot, message) {
        name: 'robot_face',
    }, function (err) {
        if (err) {
-           console.log(err)
+          console.log(err)
        }
        bot.reply(message, "I don't know that command, type 'help' to see a list of available ones!");
    });
