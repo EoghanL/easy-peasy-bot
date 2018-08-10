@@ -2,6 +2,8 @@ var constants = require('./constants.js')
 var utils = require('./utils.js')
 var sequelize = require('./sequelize')
 var models = require('./database/models.js')
+var calendar = require('./lib/calendar.js')
+const moment = require ('moment');
 
 const {
   ENV,
@@ -23,6 +25,10 @@ const {
   Todo,
   Topic
 } = models
+
+const {
+  authorizeAndCreateEvent
+} = calendar
 
 const { sqlize } = sequelize
 /**
@@ -191,6 +197,44 @@ controller.hears(QUERIES.CLEAR_TOPICS, MSG_TYPES.ALL, function (bot, message) {
         }
       })
     }
+  })
+})
+
+controller.hears(QUERIES.MEETING, MSG_TYPES.AMBIENT, function(bot, message) {
+  const date = moment().format('YYYY-MM-DD');
+  const time = /\d+:\d+/.exec(message.text)[0];
+
+  let hour = parseInt(/\d+:/.exec(time)[0], 10);
+  let endHour = hour + 1;
+
+  if (hour < 8) {
+    hour = `${hour + 12}:`;
+    endHour = `${endHour + 12}:`;
+  }
+
+  const startTime = time.replace(/\d+:/, hour);
+  const endTime = time.replace(/\d+:/, endHour);
+
+  bot.api.channels.info({ channel: message.channel }, function(err,response) {
+    const channelMembers = response.channel.members;
+    const channelName = response.channel.name;
+    const summary = channelName + ' Meeting'
+
+    bot.api.users.list({}, function(err, resp) {
+      const emails = resp.members.filter(member => {
+        return channelMembers.includes(member.id) && member.name !== 'fractal-learn'
+      }).map(member => member.profile.email);
+
+      const options = {
+        startTime: date + 'T' + startTime + ':00',
+        endTime: date + 'T' + endTime + ':00',
+        summary: summary,
+        attendees: emails
+      }
+
+      authorizeAndCreateEvent(options)
+      bot.whisper(message, "Created a google calendar event for this meeting")
+    })
   })
 })
 

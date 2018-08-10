@@ -20,14 +20,16 @@ const QUERIES = {
   GREETING: ['hello', 'hi', 'greetings'],
   HELP: ['HELP', 'help', 'Help'],
   START_VOTE: ['Start Voting', 'start voting', 'Start voting'],
+  MEETING: ['Meet', 'meet', 'Meeting', 'meeting']
 }
 
 const MSG_TYPES = {
   ALL: ['direct_mention', 'mention', 'direct_message'],
+  AMBIENT: 'ambient',
   MENTIONS: ['direct_mention', 'mention'],
   DIRECT: ['direct_mention', 'direct_message'],
   DIR_MSG: 'direct_message',
-  DIR_MNTN: 'direct_mention'
+  DIR_MNTN: 'direct_mention',
 }
 
 const MSGS = {
