@@ -210,6 +210,9 @@ controller.hears(QUERIES.MEETING, MSG_TYPES.AMBIENT, function(bot, message) {
   if (hour < 8) {
     hour = `${hour + 12}:`;
     endHour = `${endHour + 12}:`;
+  } else {
+    hour = `${hour}:`;
+    endHour = `${endHour}:`;
   }
 
   const startTime = time.replace(/\d+:/, hour);
