@@ -73,7 +73,7 @@ async function getVotingTotals(controller, bot, message, callback, token) {
 
 async function formatVoteResults(votesObj) {
   topics = await Topic.all()
-  console.log(topics)
+
   return Object.keys(votesObj).reduce((output, voteIdx) => {
     return output += `${topics[NUMBERS[voteIdx]].description}: ${votesObj[voteIdx]}\n`
   }, 'The voting results are: \n')

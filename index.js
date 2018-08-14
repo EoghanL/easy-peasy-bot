@@ -204,7 +204,7 @@ controller.hears(QUERIES.IN_MSG, ['ambient', 'direct_message', 'direct_mention']
 
 controller.hears(QUERIES.OUT_MSG, ['ambient', 'direct_message', 'direct_mention'], (bot, message) => {
   const outMsg = message.text.split(':')[1].trim()
-  console.log(outMsg)
+
   if (outMsg.toLowerCase().includes('all done')) {
     User.findOne({slack_user_id: message.user}).then((user) => {
       console.log(user)
