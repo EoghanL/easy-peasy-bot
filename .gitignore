@@ -1,4 +1,7 @@
 .idea
+.env
+credentials.json
+token.json
 
 # Logs
 logs
